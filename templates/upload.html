@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload Receipt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>📄 Upload Receipt</h1>
+    <p>Select a receipt image to upload and extract structured data automatically.</p>
+    
+    <!-- Method 1: Direct upload to Flask -->
+    <form id="uploadForm" class="upload-form" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="fileInput">Choose receipt image:</label>
+        <input type="file" id="fileInput" name="file" accept="image/*" required />
+      </div>
+      <button type="submit">Upload & Process</button>
+    </form>
+
+    <!-- Method 2: Pre-signed URL upload -->
+    <hr style="margin: 30px 0;">
+    <p>Or use pre-signed URL upload:</p>
+    <input type="file" id="fileInputPresigned" accept="image/*" />
+    <button onclick="uploadWithPresigned()">Upload with Pre-signed URL</button>
+
+    <div id="status"></div>
+  </div>
+
+  <script src="{{ url_for('static', filename='upload.js') }}"></script>
+</body>
+</html>
