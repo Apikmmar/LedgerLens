@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Receipts</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="receipts-container">
+    <div class="receipts-header">
+      <h1>🧾 All Receipts</h1>
+    </div>
+
+    {% if receipts %}
+      <!-- Statistics Bar -->
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-value">{{ receipts|length }}</span>
+          <span class="stat-label">Total Receipts</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">RM {{ "%.2f"|format(receipts|sum(attribute='totalAmount')|float) }}</span>
+          <span class="stat-label">Total Amount</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ receipts|map(attribute='spendingLocation')|unique|list|length }}</span>
+          <span class="stat-label">Unique Locations</span>
+        </div>
+      </div>
+
+      <!-- Receipts Table -->
+      <table class="receipts-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Location</th>
+            <th>Total</th>
+            <th>Category</th>
+            <th>Items</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in receipts %}
+          <tr>
+            <td>
+              <span class="date-cell">{{ r.billDate }}</span>
+            </td>
+            <td>
+              <span class="location-cell">{{ r.spendingLocation }}</span>
+            </td>
+            <td>
+              <span class="total-cell">RM {{ "%.2f"|format(r.totalAmount | float) }}</span>
+            </td>
+            <td>
+              <span class="category-cell">{{ r.category }}</span>
+            </td>
+            <td>
+              <ul class="items-list">
+                {% for item in r.item_table %}
+                  <li>
+                    <span>
+                      <span class="item-quantity">{{ item.quantity | int }}x</span>
+                      {{ item.itemName }}
+                    </span>
+                    <span class="item-price">RM{{ "%.2f"|format(item.price | float) }}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="no-receipts">
+        <p>No receipts found in the database.</p>
+      </div>
+    {% endif %}
+
+    <!-- Navigation -->
+    <div class="navigation">
+      <div class="nav-links">
+        <a href="/" class="back-link">⬅️ Back to Upload</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

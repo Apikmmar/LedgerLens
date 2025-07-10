@@ -3,9 +3,12 @@ import os
 import uuid
 import json
 import base64
+from dotenv import load_dotenv
 from datetime import datetime
 from urllib.parse import unquote_plus
 from lambda_functions.prompt import prompt
+
+load_dotenv()
 
 s3 = boto3.client("s3")
 ddb = boto3.resource("dynamodb")

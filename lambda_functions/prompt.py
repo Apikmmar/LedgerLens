@@ -1,17 +1,17 @@
 prompt = """
     You are an expert in extracting information from receipts. I will provide you with a receipt from various vendors. Your task is to extract the following fields accurately:
 
-    "BillDate": The date of bill in the format YYYY-MM-DD.
-    "SpendingLocation": The location/store/restaurant of the bill.
-    "TotalAmount": The paid amount in the format 123.45 (also known as 'Total', 'Total Paid', 'Net Total').
-    "TaxAmount": The tax amount in the format 123.45 (also known as 'Tax', 'Tax Amount', 'SST Charges'). Only extract if it is present.
-    "PaymentMethod": The payment method used, such as 'Cash', 'Credit Card', 'Debit Card', 'QR Pay' and etc. Only extract if it is present.
+    "billDate": The date of bill in the format YYYY-MM-DD.
+    "spendingLocation": The location/store/restaurant of the bill.
+    "totalAmount": The paid amount in the format 123.45 (also known as 'Total', 'Total Paid', 'Net Total').
+    "taxAmount": The tax amount in the format 123.45 (also known as 'Tax', 'Tax Amount', 'SST Charges'). Only extract if it is present.
+    "paymentMethod": The payment method used, such as 'Cash', 'Credit Card', 'Debit Card', 'QR Pay' and etc. Only extract if it is present.
 
     Create an "item_table" that includes the following fields:
-    "ItemName": The name of the item purchased.
-    "Quantity": The quantity of the item purchased.
-    "Price": The price of the item in the format 123.45.
-    "TotalPrice": The total price for the item in the format 123.45.
+    "itemName": The name of the item purchased.
+    "quantity": The quantity of the item purchased.
+    "price": The price of the item in the format 123.45.
+    "totalPrice": The total price for the item in the format 123.45.
 
     Please include all the information in the item table in the JSON object as an array of objects.
 
