@@ -21,38 +21,88 @@ def receipts():
         if not table:
             return "DynamoDB table not found", 404
         
-        response = table.scan()
-        items = response.get('Items', [])
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        if start_date and end_date:
+            try:
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+                items = [r for r in items if is_date_in_range(r.get("billDate", ""), start_dt, end_dt)]
+            except ValueError:
+                pass
+
+        
+        while 'LastEvaluatedKey' in response:
+            response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+            items.extend(response.get('Items', []))
         
         for r in items:
-            if "totalAmount" in r:
-                r["totalAmount"] = float(r["totalAmount"])
+            try:
+                r["totalAmount"] = float(r.get("totalAmount", 0.0))
+            except (ValueError, TypeError):
+                r["totalAmount"] = 0.0
                 
-            if "billDate" in r:
-                if isinstance(r["billDate"], str):
-                    try:
-                        date_parts = r["billDate"].split('-')
-                        if len(date_parts) == 3:
-                            r["billDate"] = f"{date_parts[2]}/{date_parts[1]}/{date_parts[0]}"
-                    except:
-                        pass
-                else:
-                    try:
-                        r["billDate"] = r["billDate"].strftime("%d/%m/%Y")
-                    except:
-                        r["billDate"] = str(r["billDate"])
+            for item in r.get("item_table", []):
+                try:
+                    item["price"] = float(item.get("price", 0.0))
+                except (ValueError, TypeError):
+                    item["price"] = 0.0
+                try:
+                    item["quantity"] = int(item.get("quantity", 0))
+                except (ValueError, TypeError):
+                    item["quantity"] = 0
+
+            if "billDate" in r and isinstance(r["billDate"], str):
+                date_parts = r["billDate"].split('-')
+                if len(date_parts) == 3:
+                    r["billDate"] = f"{date_parts[2]}/{date_parts[1]}/{date_parts[0]}"
+                    
+        if start_date and end_date:
+            try:
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+                items = [r for r in items if is_date_in_range(r.get("billDate", ""), start_dt, end_dt)]
+            except ValueError:
+                pass
                         
         grouped = defaultdict(list)
+        total_amount = 0.0
+        unique_locations = set()
         
         for r in items:
             grouped[r.get("billDate", "Unknown Date")].append(r)
+            total_amount += r.get("totalAmount", 0.0)
             
-        groyped_items = dict(sorted(
-            grouped.items(), 
-            key=lambda x: datetime.strptime(x[0], "%d/%m/%Y"),, 
-            reverse=True)
-)
+            if "spendingLocation" in r:
+                unique_locations.add(r["spendingLocation"])
+            
+        grouped_sorted = dict(sorted(
+            grouped.items(),
+            key=lambda x: datetime.strptime(x[0], "%d/%m/%Y"),
+            reverse=True
+        ))
         
-        return render_template("receipts.html", receipts=items)
+        total_receipts = len(items)
+        total_amount = round(total_amount, 2)
+        unique_locations_count =  len(unique_locations)
+        
+        return render_template("receipts.html", grouped_receipts=grouped_sorted,
+                                                total_receipts=total_receipts,
+                                                total_amount=total_amount,
+                                                unique_locations=unique_locations_count)
     except Exception as e:
         return f"An error occurred: {str(e)}", 500
+    
+def parse_date(date_str, fmt="%d/%m/%Y"):
+    try:
+        return datetime.strptime(date_str, fmt)
+    except ValueError:
+        return None
+    
+def is_date_in_range(date, start_dt, end_dt):
+    receipt_dt = parse_date(date)
+    if not receipt_dt:
+        return False
+    
+    return start_dt <= receipt_dt <= end_dt
