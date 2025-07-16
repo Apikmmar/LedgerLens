@@ -4,6 +4,8 @@ import os
 import json
 from dotenv import load_dotenv
 from flask import Blueprint, render_template, request, jsonify
+from PIL import Image
+from io import BytesIO
 from lambda_functions.extract_lambda import lambda_handler as extract_lambda_handler
 
 load_dotenv()
@@ -23,21 +25,29 @@ def index():
             if file.filename == '':
                 return "No selected file", 400
             
-            filename = f"{uuid.uuid4()}_{file.filename}"
+            img = Image.open(file.stream).convert("RGB")
+            buffer = BytesIO()
+            img.save(buffer, format="PNG")
+            buffer.seek(0)
+
+            filename = f"{uuid.uuid4()}.png"
             bucket =  os.environ.get("S3_BUCKET_NAME")
             key = f"uploads/{filename}"
             
             s3.put_object(
                 Bucket=bucket,
                 Key=key,
-                Body=file,
-                ContentType=file.content_type
+                Body=buffer,
+                ContentType="image/png"
             )
             
             result = extract_lambda_handler({
                 "bucket": bucket,
                 "key": key
             }, None)
+            
+            if result["statusCode"] != 200:
+                return f"Error processing receipt: {json.loads(result['body']).get('error', 'Unknown error')}", 500
             
             return "Receipt uploaded and processed successfully", 200
         return render_template("upload.html")

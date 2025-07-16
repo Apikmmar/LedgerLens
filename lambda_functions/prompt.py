@@ -30,7 +30,7 @@ prompt = """
 
     Example format:
     {
-        BillDate": "2024-01-15",
+        "BillDate": "15-04-2025",
         "SpendingLocation": "ABC Restaurant",
         "TotalAmount": "45.60",
         "TaxAmount": "2.74",
