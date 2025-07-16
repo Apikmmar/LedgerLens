@@ -21,7 +21,6 @@ LedgerLens is a receipt-tracking web application where users can upload their pu
 - **AI Extraction**: Claude Sonnet 3.5 (Anthropic API)  
 - **Database**: Amazon DynamoDB  
 - **Storage**: Amazon S3 (optional for storing uploaded files)  
-- **Deployment**: AWS Lambda / EC2 / Fargate (flexible)  
 
 ---
 
@@ -32,8 +31,10 @@ ledgerlens/
 │
 ├── app/
 │   ├── __init__.py
-│   └── routes.py
-│
+│   └── routes
+│       ├── main_routes.py
+│       └── receipt_routes.py
+|
 ├── templates/
 │   └── upload.html
 │
@@ -75,11 +76,20 @@ ledgerlens/
    The receipt data is saved in a DynamoDB table:
    ```json
    {
-     "receipt_id": "uuid",
-     "vendor": "Starbucks",
-     "date": "2025-07-01",
-     "items": [...],
-     "total": 24.90
+      "BillDate": "15-04-2025",
+      "SpendingLocation": "ABC Restaurant",
+      "TotalAmount": "45.60",
+      "TaxAmount": "2.74",
+      "PaymentMethod": "Credit Card",
+      "item_table": [
+         {
+               "ItemName": "Burger",
+               "Quantity": "1",
+               "Price": "15.90",
+               "TotalPrice": "15.90"
+         }
+      ],
+      "Category": "FOOD"
    }
    ```
 

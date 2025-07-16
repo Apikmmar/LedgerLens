@@ -12,6 +12,8 @@ load_dotenv()
 
 receipt_routes = Blueprint("receipt", __name__)
 dynamodb = boto3.resource('dynamodb')
+s3 = boto3.client('s3')
+bucket_name = os.environ.get("S3_BUCKET_NAME")
 
 
 @receipt_routes.route('/receipts', methods=['GET'])
@@ -31,29 +33,8 @@ def receipts():
         while 'LastEvaluatedKey' in response:
             response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
             items.extend(response.get('Items', []))
-
-        for r in items:
-            try:
-                r["totalAmount"] = float(r.get("totalAmount", 0.0))
-            except (ValueError, TypeError):
-                r["totalAmount"] = 0.0
-
-            for item in r.get("item_table", []):
-                try:
-                    item["price"] = float(item.get("price", 0.0))
-                except (ValueError, TypeError):
-                    item["price"] = 0.0
-                try:
-                    item["quantity"] = int(item.get("quantity", 0))
-                except (ValueError, TypeError):
-                    item["quantity"] = 0
-
-            if "billDate" in r and isinstance(r["billDate"], str):
-                dt = parse_date(r["billDate"])
-                if dt:
-                    r["billDate"] = dt.strftime("%d-%m-%Y")
-                else:
-                    r["billDate"] = "Unknown Date"
+            
+        preprocessed_receipts(items)
 
         if start_date and end_date:
             try:
@@ -92,7 +73,50 @@ def receipts():
 
     except Exception as e:
         return f"An error occurred: {str(e)}", 500
+    
+def preprocessed_receipts(items):
+    for r in items:
+        try:
+            r["totalAmount"] = float(r.get("totalAmount", 0.0))
+        except (ValueError, TypeError):
+            r["totalAmount"] = 0.0
 
+        for item in r.get("item_table", []):
+            try:
+                item["price"] = float(item.get("price", 0.0))
+            except (ValueError, TypeError):
+                item["price"] = 0.0
+            try:
+                item["quantity"] = int(item.get("quantity", 0))
+            except (ValueError, TypeError):
+                item["quantity"] = 0
+
+        if "billDate" in r and isinstance(r["billDate"], str):
+            dt = parse_date(r["billDate"])
+            if dt:
+                r["billDate"] = dt.strftime("%d-%m-%Y")
+            else:
+                r["billDate"] = "Unknown Date"
+                
+        if r.get("s3_key"):
+            r["download_url"] = generate_url(r["s3_key"])
+        else:
+            r["download_url"] = None
+                
+                    
+def generate_url(s3_key):
+    try:
+        return s3.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": bucket_name,
+                "Key": s3_key,
+                "ResponseContentDisposition": f'attachment; filename="{os.path.basename(s3_key)}"',
+            },
+            ExpiresIn=3600,
+        )
+    except Exception:
+        return None
 
 def parse_date(date_str):
     for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%Y-%m-%d"):
@@ -101,7 +125,6 @@ def parse_date(date_str):
         except ValueError:
             continue
     return None
-
 
 def is_date_in_range(date_str, start_dt, end_dt):
     dt = parse_date(date_str)

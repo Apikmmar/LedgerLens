@@ -569,3 +569,18 @@ hr {
   gap: 10px;
   justify-content: center;
 }
+
+.download-link {
+  background: linear-gradient(135deg, #28a745, #218838);
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  text-decoration: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.download-link:hover {
+  background: linear-gradient(135deg, #218838, #1e7e34);
+}
